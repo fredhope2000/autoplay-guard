@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Autoplay Guard</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="panel">
+      <div class="header">
+        <button id="open-options" class="mark-button" type="button" aria-label="Open blocked domains settings">A</button>
+        <p class="eyebrow">Autoplay Guard</p>
+      </div>
+      <h1>Current site</h1>
+      <p id="domain" class="domain">Loading...</p>
+      <label class="toggle-row" for="allow-toggle">
+        <span class="copy">
+          <span class="label">Disable autoplay on this domain</span>
+          <span class="hint">If on, videos and audio are paused until you interact.</span>
+        </span>
+        <input id="allow-toggle" type="checkbox">
+      </label>
+      <p id="status" class="status"></p>
+      <button id="manage-domains" class="manage-button" type="button">Manage blocked domains</button>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

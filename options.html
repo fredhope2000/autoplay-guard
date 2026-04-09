@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Autoplay Guard Settings</title>
+    <link rel="stylesheet" href="options.css">
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div class="hero-mark">A</div>
+        <div>
+          <p class="eyebrow">Autoplay Guard</p>
+          <h1>Blocked domains</h1>
+          <p class="intro">Autoplay stays enabled by default. Add a domain here when you want videos and audio paused until you interact.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <form id="domain-form" class="domain-form">
+          <label for="domain-input" class="label">Add a domain</label>
+          <div class="row">
+            <input id="domain-input" name="domain" type="text" placeholder="abcnews.com" autocomplete="off" spellcheck="false">
+            <button type="submit">Add</button>
+          </div>
+          <p id="form-status" class="status"></p>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="list-header">
+          <h2>Current list</h2>
+          <p id="count" class="count"></p>
+        </div>
+        <ul id="domain-list" class="domain-list"></ul>
+        <p id="empty-state" class="empty-state">No blocked domains yet.</p>
+      </section>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>
