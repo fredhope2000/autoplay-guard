@@ -1,6 +1,6 @@
 # Autoplay Guard
 
-Local Chrome extension that allows autoplay by default, with per-domain opt-in blocking.
+Chrome extension that allows autoplay by default, with per-domain opt-in blocking.
 
 ## Load it in Chrome
 
@@ -16,6 +16,8 @@ Local Chrome extension that allows autoplay by default, with per-domain opt-in b
 3. Turn the toggle on if you want autoplay blocked on that domain.
 4. Leave the toggle off if you want that domain to keep autoplay enabled.
 
+On blocked domains, the extension suppresses autoplay until you interact with the page. After that, normal manual playback should work.
+
 The extension reloads the current tab after you change the toggle so the new rule applies immediately.
 
 ## Manage the blocked list
@@ -24,3 +26,8 @@ The extension reloads the current tab after you change the toggle so the new rul
 - Or open the extension's options page from `chrome://extensions`.
 
 From there you can review every blocked domain, add one manually, or remove one without visiting the site first.
+
+## Notes
+
+- Blocked-domain settings are stored in Chrome sync storage, not in this folder.
+- The current behavior has been tested on `abcnews.com` and `cbsnews.com`.
