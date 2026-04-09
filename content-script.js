@@ -3,22 +3,25 @@ const SETTINGS_FALLBACK = {
 };
 
 let isBlockedDomain = false;
-let recentUserGestureAt = 0;
+let hasUserInteracted = false;
+let pageHookInjected = false;
 
 const hostname = normalizeDomain(window.location.hostname);
 
+injectPageHook();
 trackUserIntent();
 observeStorageChanges();
 
 initialize().catch(() => {
-  enforceAgainstDocument();
+  applySettings(SETTINGS_FALLBACK);
+  prepareExistingMediaElements();
   observeMutations();
 });
 
 async function initialize() {
   const settings = await chrome.runtime.sendMessage({ type: "getSettings" });
   applySettings(settings);
-  enforceAgainstDocument();
+  prepareExistingMediaElements();
   observeMutations();
 }
 
@@ -28,32 +31,22 @@ function applySettings(settings) {
     : SETTINGS_FALLBACK.blockedDomains;
 
   isBlockedDomain = hostnameMatchesDomainList(hostname, blockedDomains);
+  syncPageHookState();
 }
 
 function trackUserIntent() {
   const markUserIntent = () => {
-    recentUserGestureAt = Date.now();
+    if (hasUserInteracted) {
+      return;
+    }
+
+    hasUserInteracted = true;
+    syncPageHookState();
   };
 
   document.addEventListener("pointerdown", markUserIntent, true);
   document.addEventListener("keydown", markUserIntent, true);
   document.addEventListener("touchstart", markUserIntent, true);
-
-  document.addEventListener(
-    "play",
-    (event) => {
-      if (!(event.target instanceof HTMLMediaElement)) {
-        return;
-      }
-
-      if (shouldAllowPlayback()) {
-        return;
-      }
-
-      pauseMediaElement(event.target);
-    },
-    true
-  );
 }
 
 function observeStorageChanges() {
@@ -65,17 +58,13 @@ function observeStorageChanges() {
     applySettings({ blockedDomains: changes.blockedDomains.newValue || [] });
 
     if (isBlockedDomain) {
-      enforceAgainstDocument();
+      prepareExistingMediaElements();
     }
   });
 }
 
 function observeMutations() {
   const observer = new MutationObserver((mutations) => {
-    if (!isBlockedDomain) {
-      return;
-    }
-
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
         collectMediaElements(node).forEach(prepareMediaElement);
@@ -89,20 +78,8 @@ function observeMutations() {
   });
 }
 
-function enforceAgainstDocument() {
-  if (!isBlockedDomain) {
-    return;
-  }
-
+function prepareExistingMediaElements() {
   document.querySelectorAll("video, audio").forEach(prepareMediaElement);
-
-  window.setTimeout(() => {
-    document.querySelectorAll("video, audio").forEach((element) => {
-      if (!shouldAllowPlayback()) {
-        pauseMediaElement(element);
-      }
-    });
-  }, 1500);
 }
 
 function collectMediaElements(node) {
@@ -124,30 +101,6 @@ function prepareMediaElement(element) {
 
   element.autoplay = false;
   element.removeAttribute("autoplay");
-
-  if (!shouldAllowPlayback()) {
-    pauseMediaElement(element);
-  }
-}
-
-function pauseMediaElement(element) {
-  try {
-    element.pause();
-  } catch (error) {
-    return;
-  }
-
-  if (!Number.isNaN(element.currentTime) && element.currentTime > 0.25) {
-    try {
-      element.currentTime = 0;
-    } catch (error) {
-      return;
-    }
-  }
-}
-
-function shouldAllowPlayback() {
-  return !isBlockedDomain || Date.now() - recentUserGestureAt < 1500;
 }
 
 function hostnameMatchesDomainList(currentHostname, domains) {
@@ -158,4 +111,32 @@ function hostnameMatchesDomainList(currentHostname, domains) {
 
 function normalizeDomain(domain) {
   return String(domain || "").trim().toLowerCase().replace(/^www\./, "");
+}
+
+function injectPageHook() {
+  if (pageHookInjected) {
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.src = chrome.runtime.getURL("page-hook.js");
+  script.dataset.autoplayGuard = "page-hook";
+  script.onload = () => {
+    syncPageHookState();
+    script.remove();
+  };
+
+  (document.documentElement || document.head || document).appendChild(script);
+  pageHookInjected = true;
+}
+
+function syncPageHookState() {
+  window.dispatchEvent(
+    new CustomEvent("autoplay-guard:update", {
+      detail: {
+        blocked: isBlockedDomain,
+        hasUserInteracted
+      }
+    })
+  );
 }
